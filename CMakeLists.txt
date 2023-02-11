@@ -4,29 +4,16 @@ set(PROJECT_NAME VulkanRayTracing)
 # Source groups
 ################################################################################
 set(Header_Files
-    "Camera.h"
+	"TestRayTrace.h"
+	"VulkanBVHBuilder.h"
+	"VulkanRTShader.h"   
 )
 source_group("Header Files" FILES ${Header_Files})
 
 set(Source_Files
-    "Maths.cpp"
-    "Maths.h"
-    "Matrix2.cpp"
-    "Matrix2.h"
-    "Matrix3.cpp"
-    "Matrix3.h"
-    "Matrix4.cpp"
-    "Matrix4.h"
-    "Plane.cpp"
-    "Plane.h"
-    "Quaternion.cpp"
-    "Quaternion.h"
-    "Vector2.cpp"
-    "Vector2.h"
-    "Vector3.cpp"
-    "Vector3.h"
-    "Vector4.cpp"
-    "Vector4.h"
+	"TestRayTrace.cpp"
+	"VulkanBVHBuilder.cpp"
+	"VulkanRTShader.cpp"   
 )
 source_group("Source Files" FILES ${Source_Files})
 
@@ -44,20 +31,56 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     INTERPROCEDURAL_OPTIMIZATION_RELEASE "TRUE"
 )
 target_precompile_headers(${PROJECT_NAME} PRIVATE
+    <vulkan/vulkan.hpp>
+	<vma/vk_mem_alloc.h>
     <memory>
     <unordered_set>
+    <map>
     <vector>
+    <set>
     <string>
     <fstream>
     <iostream>
     <string>
     <iosfwd>
-    <set>
+	
+	<Matrix2.h>
+    <Matrix3.h>
+    <Matrix4.h>
+
+    <Vector2.h>
+    <Vector3.h>
+    <Vector4.h>
+	
+	<Quaternion.h>
+	
+	<SmartTypes.h>
+    <VulkanRenderer.h>
+    <VulkanShader.h>
+    <VulkanShaderBuilder.h>
+    <VulkanTexture.h>
+    <VulkanMesh.h>
+    <VulkanPipelineBuilder.h>
+    <VulkanDynamicRenderBuilder.h>
+
+    <VulkanDescriptorSetLayoutBuilder.h>
+    <VulkanRenderPassBuilder.h>
+    <VulkanCompute.h>
+    <VulkanComputePipelineBuilder.h>
 )
 
 ################################################################################
 # Compile and link options
 ################################################################################
+target_include_directories (${PROJECT_NAME} 
+    PUBLIC ${VULKAN_INCLUDE_DIRS}
+)	
+
+target_include_directories (${PROJECT_NAME} 
+    PUBLIC ${Vulkan_INCLUDE_DIR}
+    PUBLIC ${CMAKE_SOURCE_DIR}/NCLCoreClasses
+	PUBLIC ${CMAKE_SOURCE_DIR}/VulkanRendering
+)	
 if(MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE
         ${DEFAULT_CXX_DEBUG_INFORMATION_FORMAT};

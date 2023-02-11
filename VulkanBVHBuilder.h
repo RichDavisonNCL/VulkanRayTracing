@@ -6,7 +6,7 @@ Contact:richgdavison@gmail.com
 License: MIT (see LICENSE file at the top of the source tree)
 *//////////////////////////////////////////////////////////////////////////////
 #pragma once
-#include "VulkanRenderer.h"
+#include "../VulkanRendering/VulkanRenderer.h"
 
 namespace NCL::Maths {
 	class Matrix4;

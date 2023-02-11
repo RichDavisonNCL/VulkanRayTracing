@@ -26,7 +26,7 @@ using namespace Rendering;
 //	}
 //);
 
-TestRayTrace::TestRayTrace(Window& window) : VulkanTutorialRenderer(window) {
+TestRayTrace::TestRayTrace(Window& window) : VulkanRenderer(window) {
 	//EnableRayTracing();
 	//GLTFLoader::LoadGLTF("DamagedHelmet.gltf", [](void) ->  MeshGeometry* {return new VulkanMesh(); });
 }
@@ -35,15 +35,15 @@ TestRayTrace::~TestRayTrace() {
 
 }
 
-void TestRayTrace::SetupTutorial() {
-	VulkanTutorialRenderer::SetupTutorial();
-	triMesh = GenerateTriangle();
-	triMesh->UploadToGPU(this);
-
-	sceneBVH = VulkanBVHBuilder()
-		.WithMesh(&*triMesh, Matrix4())
-		.Build(*this);
-}
+//void TestRayTrace::SetupTutorial() {
+//	VulkanTutorialRenderer::SetupTutorial();
+//	triMesh = GenerateTriangle();
+//	triMesh->UploadToGPU(this);
+//
+//	sceneBVH = VulkanBVHBuilder()
+//		.WithMesh(&*triMesh, Matrix4())
+//		.Build(*this);
+//}
 
 void TestRayTrace::RenderFrame() {
 
@@ -52,3 +52,21 @@ void TestRayTrace::RenderFrame() {
 void TestRayTrace::Update(float dt) {
 	//vk::
 }
+
+//
+//bool VulkanRenderer::EnableRayTracing() {
+//	vk::PhysicalDeviceRayTracingPipelinePropertiesKHR	pipeProperties;
+//	vk::PhysicalDeviceAccelerationStructureFeaturesKHR	accelFeatures;
+//
+//	vk::PhysicalDeviceProperties2 props;
+//	props.pNext = &pipeProperties;
+//
+//	gpu.getProperties2(&props, *Vulkan::dispatcher);
+//	//gpu.getFeatures2KHR(accelFeatures);
+//
+//	auto properties =
+//		gpu.getProperties2<vk::PhysicalDeviceProperties2,
+//		vk::PhysicalDeviceRayTracingPipelinePropertiesKHR>();
+//
+//	return true;
+//}

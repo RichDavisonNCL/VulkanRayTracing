@@ -7,8 +7,8 @@ License: MIT (see LICENSE file at the top of the source tree)
 *//////////////////////////////////////////////////////////////////////////////
 #include "VulkanBVHBuilder.h"
 
-#include "VulkanMesh.h"
-#include "VulkanUtils.h"
+#include "../VulkanRendering/VulkanMesh.h"
+#include "../VulkanRendering/VulkanUtils.h"
 
 using namespace NCL;
 using namespace Rendering;
