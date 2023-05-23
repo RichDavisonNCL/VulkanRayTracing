@@ -54,6 +54,9 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE
 	
 	<Quaternion.h>
 	
+	<Camera.h>
+    <TextureLoader.h>
+	
 	<SmartTypes.h>
     <VulkanRenderer.h>
     <VulkanShader.h>

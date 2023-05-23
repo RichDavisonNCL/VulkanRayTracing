@@ -7,25 +7,28 @@ License: MIT (see LICENSE file at the top of the source tree)
 *//////////////////////////////////////////////////////////////////////////////
 #pragma once
 #include "VulkanBVHBuilder.h"
-#include "../VulkanRendering/VulkanRenderer.h"
+#include "../VulkanTutorials/VulkanTutorialRenderer.h"
 
 namespace NCL::Rendering {
-	class TestRayTrace : public VulkanRenderer
+	class TestRayTrace : public VulkanTutorialRenderer
 	{
 	public:
 		TestRayTrace(Window& window);
 		~TestRayTrace();
 
-		//void SetupTutorial() override;
+		void SetupTutorial() override;
 
 		void RenderFrame() override;
 		void Update(float dt) override;
 
 	protected:
+		void SetupDevice(vk::PhysicalDeviceFeatures2& deviceFeatures) override;
+
 		VulkanPipeline		pipeline;
 		UniqueVulkanMesh	triMesh;
 		VulkanBVH			sceneBVH;
-		//bool EnableRayTracing();
+
+		UniqueVulkanMesh	triangle;
 
 		//const vk::PhysicalDeviceRayTracingPipelinePropertiesKHR&  GetRayTracingPipelineProperties() const { return rayPipelineProperties; }
 		//const vk::PhysicalDeviceAccelerationStructureFeaturesKHR& GetRayTracingAccelerationStructureProperties() const { return rayAccelFeatures; }
@@ -33,8 +36,8 @@ namespace NCL::Rendering {
 		///*
 		//* RayTracing Stuff!
 		//*/
-		//vk::PhysicalDeviceRayTracingPipelinePropertiesKHR	rayPipelineProperties;
-		//vk::PhysicalDeviceAccelerationStructureFeaturesKHR	rayAccelFeatures;
+		vk::PhysicalDeviceRayTracingPipelinePropertiesKHR	rayPipelineProperties;
+		vk::PhysicalDeviceAccelerationStructureFeaturesKHR	rayAccelFeatures;
 	};
 }
 

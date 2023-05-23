@@ -19,17 +19,27 @@ namespace NCL::Rendering {
 		//TODO
 	};
 
+	struct VulkanBVHEntry {
+		Matrix4		modelMat;
+		uint32_t	meshID;
+	};
+
 	class VulkanBVHBuilder	{
 	public:
-		VulkanBVHBuilder();
+		VulkanBVHBuilder(const std::string& debugName = "");
 		~VulkanBVHBuilder();
 
-		VulkanBVHBuilder& WithMesh(VulkanMesh* m, const Matrix4& transform);//how to set binding table???
+		//VulkanBVHBuilder& WithMesh(VulkanMesh* m, const Matrix4& transform);//how to set binding table???
+
+		VulkanBVHBuilder& WithObject(VulkanMesh* m, const Matrix4& transform);
 
 		VulkanBVH Build(VulkanRenderer& renderer);
 
 	protected:
-		std::unordered_set<VulkanMesh*> uniqueMeshes;
+		std::map<VulkanMesh*, uint32_t> uniqueMeshes;
+
+		std::vector<VulkanBVHEntry> entries;
+
 		std::vector<VulkanMesh*> meshes;
 		std::vector<Matrix4>		transforms;
 

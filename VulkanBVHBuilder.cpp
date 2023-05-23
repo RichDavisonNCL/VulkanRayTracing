@@ -13,7 +13,7 @@ License: MIT (see LICENSE file at the top of the source tree)
 using namespace NCL;
 using namespace Rendering;
 
-VulkanBVHBuilder::VulkanBVHBuilder() {
+VulkanBVHBuilder::VulkanBVHBuilder(const std::string& debugName) {
 	vertexCount = 0;
 	indexCount	= 0;
 }
@@ -22,22 +22,65 @@ VulkanBVHBuilder::~VulkanBVHBuilder() {
 
 }
 
-VulkanBVHBuilder& VulkanBVHBuilder::WithMesh(VulkanMesh* m, const Matrix4& transform) {
-	meshes.push_back(m);
-	transforms.push_back(transform);
+//VulkanBVHBuilder& VulkanBVHBuilder::WithMesh(VulkanMesh* m, const Matrix4& transform) {
+//	meshes.push_back(m);
+//	transforms.push_back(transform);
+//
+//	auto inserted = uniqueMeshes.insert(m);
+//
+//	if (inserted.second) {
+//		vertexCount += m->GetVertexCount();
+//		indexCount  += m->GetIndexCount();
+//	}
+//
+//	return *this;
+//}
 
-	auto inserted = uniqueMeshes.insert(m);
+VulkanBVHBuilder& VulkanBVHBuilder::WithObject(VulkanMesh* m, const Matrix4& transform) {
+	auto savedMesh = uniqueMeshes.find(m);
 
-	if (inserted.second) {
-		vertexCount += m->GetVertexCount();
-		indexCount  += m->GetIndexCount();
+	uint32_t meshID = 0;
+
+	if (savedMesh == uniqueMeshes.end()) {
+		meshes.push_back(m);
+		meshID = meshes.size() - 1;
+		uniqueMeshes.insert({m, meshID});
 	}
+	else {
+		meshID = savedMesh->second;
+	}
+
+	VulkanBVHEntry entry;
+	entry.modelMat	= transform;
+	entry.meshID	= meshID;
+
+	entries.push_back(entry);
 
 	return *this;
 }
 
 VulkanBVH VulkanBVHBuilder::Build(VulkanRenderer& renderer) {
 	VulkanBVH e;
+
+	//We need to first create the BLAS entries for the unique meshes
+	for (const auto& i : uniqueMeshes) {
+
+	}
+
+	//Now we can provide the TLAS entries for the unique objects we want to actually make
+	for (const auto& i : entries) {
+		vk::AccelerationStructureGeometryTrianglesDataKHR triData;
+		vk::AccelerationStructureGeometryKHR geometry;
+		vk::AccelerationStructureBuildRangeInfoKHR offsets;
+
+		geometry.geometryType = vk::GeometryTypeKHR::eTriangles;
+
+		offsets.firstVertex = 0;
+		offsets.primitiveCount = meshes[i.meshID]->GetPrimitiveCount();
+		offsets.primitiveOffset = 0;
+		offsets.transformOffset = 0;
+	}
+	//Finalise our BVH
 
 	//VulkanAccelerationStructure vBuffer = renderer.CreateBuffer(vertexCount * sizeof(Vector3), vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress);
 	//VulkanAccelerationStructure iBuffer = renderer.CreateBuffer(indexCount * sizeof(int), vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress);
