@@ -24,6 +24,13 @@ namespace NCL::Rendering {
 		uint32_t	meshID;
 	};
 
+	struct BLASEntry {
+		vk::AccelerationStructureGeometryKHR			geometry;
+		vk::AccelerationStructureBuildRangeInfoKHR		rangeInfo;
+		vk::AccelerationStructureBuildGeometryInfoKHR	buildInfo;
+		vk::AccelerationStructureBuildSizesInfoKHR		sizeInfo;
+	};
+
 	class VulkanBVHBuilder	{
 	public:
 		VulkanBVHBuilder(const std::string& debugName = "");
@@ -33,15 +40,31 @@ namespace NCL::Rendering {
 
 		VulkanBVHBuilder& WithObject(VulkanMesh* m, const Matrix4& transform);
 
+		VulkanBVHBuilder& WithCommandQueue(vk::Queue inQueue);
+		VulkanBVHBuilder& WithCommandPool(vk::CommandPool inPool);
+
 		VulkanBVH Build(VulkanRenderer& renderer);
 
+		vk::AccelerationStructureKHR Build(vk::Device device, VmaAllocator allocator, vk::BuildAccelerationStructureFlagsKHR flags);
+
 	protected:
+
+		void BuildBLAS(vk::Device device, VmaAllocator allocator, vk::BuildAccelerationStructureFlagsKHR flags);
+
+		vk::BuildAccelerationStructureFlagsKHR flags;
+
 		std::map<VulkanMesh*, uint32_t> uniqueMeshes;
 
 		std::vector<VulkanBVHEntry> entries;
 
-		std::vector<VulkanMesh*> meshes;
+		std::vector<VulkanMesh*>	meshes;
 		std::vector<Matrix4>		transforms;
+
+
+		std::vector< BLASEntry> blasBuildInfo;
+
+		vk::Queue queue;
+		vk::CommandPool pool;
 
 		unsigned int vertexCount;
 		unsigned int indexCount;

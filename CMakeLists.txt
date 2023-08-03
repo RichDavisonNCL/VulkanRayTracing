@@ -6,7 +6,9 @@ set(PROJECT_NAME VulkanRayTracing)
 set(Header_Files
 	"TestRayTrace.h"
 	"VulkanBVHBuilder.h"
-	"VulkanRTShader.h"   
+	"VulkanRTShader.h" 
+	"VulkanRayTracingPipelineBuilder.h"	
+	"VulkanShaderBindingTableBuilder.h"
 )
 source_group("Header Files" FILES ${Header_Files})
 
@@ -14,6 +16,8 @@ set(Source_Files
 	"TestRayTrace.cpp"
 	"VulkanBVHBuilder.cpp"
 	"VulkanRTShader.cpp"   
+	"VulkanRayTracingPipelineBuilder.cpp"
+	"VulkanShaderBindingTableBuilder.cpp"	
 )
 source_group("Source Files" FILES ${Source_Files})
 
@@ -51,6 +55,10 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE
     <Vector2.h>
     <Vector3.h>
     <Vector4.h>
+
+    <Vector2i.h>
+    <Vector3i.h>
+    <Vector4i.h>
 	
 	<Quaternion.h>
 	
@@ -70,7 +78,12 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE
     <VulkanRenderPassBuilder.h>
     <VulkanCompute.h>
     <VulkanComputePipelineBuilder.h>
+
+    <VulkanBufferBuilder.h>
 )
+
+add_compile_definitions(VULKAN_HPP_DISPATCH_LOADER_DYNAMIC)
+add_compile_definitions(VK_NO_PROTOTYPES)
 
 ################################################################################
 # Compile and link options

@@ -1,0 +1,124 @@
+/******************************************************************************
+This file is part of the Newcastle Vulkan Tutorial Series
+
+Author:Rich Davison
+Contact:richgdavison@gmail.com
+License: MIT (see LICENSE file at the top of the source tree)
+*//////////////////////////////////////////////////////////////////////////////
+#include "VulkanRayTracingPipelineBuilder.h"
+
+#include "../VulkanRendering/VulkanMesh.h"
+#include "../VulkanRendering/VulkanUtils.h"
+
+using namespace NCL;
+using namespace Rendering;
+
+VulkanRayTracingPipelineBuilder::VulkanRayTracingPipelineBuilder(const std::string& debugName) : VulkanPipelineBuilderBase(debugName){
+
+}
+
+VulkanRayTracingPipelineBuilder::~VulkanRayTracingPipelineBuilder() {
+
+}
+
+VulkanRayTracingPipelineBuilder& VulkanRayTracingPipelineBuilder::WithRecursionDepth(uint32_t count) {
+	pipelineCreate.maxPipelineRayRecursionDepth = count;
+	return *this;
+}
+
+VulkanRayTracingPipelineBuilder& VulkanRayTracingPipelineBuilder::WithShaderGroup(const vk::RayTracingShaderGroupCreateInfoKHR& groupCreateInfo) {
+	shaderGroups.push_back(groupCreateInfo);
+	return *this;
+}
+
+VulkanRayTracingPipelineBuilder& VulkanRayTracingPipelineBuilder::WithGeneralGroup(uint32_t raygenIndex) {
+	vk::RayTracingShaderGroupCreateInfoKHR groupCreateInfo;
+
+	groupCreateInfo.type = vk::RayTracingShaderGroupTypeKHR::eGeneral;
+	groupCreateInfo.intersectionShader	= VK_SHADER_UNUSED_KHR;
+	groupCreateInfo.generalShader		= raygenIndex;
+	groupCreateInfo.closestHitShader	= VK_SHADER_UNUSED_KHR;
+	groupCreateInfo.anyHitShader		= VK_SHADER_UNUSED_KHR;
+
+	shaderGroups.push_back(groupCreateInfo);
+
+	return *this;
+}
+
+VulkanRayTracingPipelineBuilder& VulkanRayTracingPipelineBuilder::WithTriangleHitGroup(uint32_t closestHit, uint32_t anyHit) {
+	vk::RayTracingShaderGroupCreateInfoKHR groupCreateInfo;
+
+	groupCreateInfo.type				= vk::RayTracingShaderGroupTypeKHR::eTrianglesHitGroup;
+	groupCreateInfo.generalShader		= VK_SHADER_UNUSED_KHR;
+	groupCreateInfo.intersectionShader	= VK_SHADER_UNUSED_KHR;
+	groupCreateInfo.closestHitShader	= closestHit;
+	groupCreateInfo.anyHitShader		= anyHit;
+
+	shaderGroups.push_back(groupCreateInfo);
+
+	return *this;
+}
+
+VulkanRayTracingPipelineBuilder& VulkanRayTracingPipelineBuilder::WithProceduralHitGroup(uint32_t intersection, uint32_t closestHit, uint32_t anyHit){
+	vk::RayTracingShaderGroupCreateInfoKHR groupCreateInfo;
+
+	groupCreateInfo.type				= vk::RayTracingShaderGroupTypeKHR::eProceduralHitGroup;
+	groupCreateInfo.generalShader		= VK_SHADER_UNUSED_KHR;
+	groupCreateInfo.intersectionShader	= intersection;
+	groupCreateInfo.closestHitShader	= closestHit;
+	groupCreateInfo.anyHitShader		= anyHit;
+
+	shaderGroups.push_back(groupCreateInfo);
+
+	return *this;
+}
+
+VulkanRayTracingPipelineBuilder& VulkanRayTracingPipelineBuilder::WithShader(VulkanRTShader& shader, vk::ShaderStageFlagBits stage, const string& entry) {
+	ShaderEntry entryInfo;
+	entryInfo.entryPoint = entry;
+	entryInfo.shader = &shader;
+	entryInfo.stage = stage;
+
+	entries.push_back(entryInfo);
+	
+	return *this;
+}
+
+VulkanPipeline VulkanRayTracingPipelineBuilder::Build(vk::Device device, vk::PipelineCache cache) {
+	VulkanPipeline output;
+
+	for (const auto& i : entries) {
+		vk::PipelineShaderStageCreateInfo stageInfo;
+
+		stageInfo.pName = i.entryPoint.c_str();
+		stageInfo.stage = i.stage;
+		stageInfo.module = *i.shader->GetModule();
+		shaderStages.push_back(stageInfo);
+	}
+
+	//createInfo.flags |= vk::PipelineCreateFlagBits::Li
+
+	pipelineCreate.groupCount	= shaderGroups.size();
+	pipelineCreate.pGroups		= shaderGroups.data();
+
+	pipelineCreate.stageCount	= shaderStages.size();
+	pipelineCreate.pStages		= shaderStages.data();
+
+	vk::PipelineLayoutCreateInfo pipeLayoutCreate = vk::PipelineLayoutCreateInfo()
+		.setSetLayouts(allLayouts)
+		.setPushConstantRanges(allPushConstants);
+
+	output.layout = device.createPipelineLayoutUnique(pipeLayoutCreate);
+
+	pipelineCreate.layout = *output.layout;
+
+	//VkPipeline tempPipe = device.createRayTracingPipelineKHR({}, cache, 1, &pipelineCreate, nullptr);
+
+	vk::Pipeline tempPipe = device.createRayTracingPipelineKHR({}, cache, pipelineCreate).value;
+
+	//device.createRayTracingPipelinesKHR({}, cache, createInfo);
+
+	output.pipeline = vk::UniquePipeline(tempPipe);
+
+	return output;
+}

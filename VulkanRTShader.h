@@ -8,18 +8,19 @@ License: MIT (see LICENSE file at the top of the source tree)
 #pragma once
 
 namespace NCL::Rendering {
-	enum class RayTraceShaderStages {
-		RayGen,
-		AnyHit,
-		ClosestHit,
-		Miss,
-		Intersection,
-		MAXSIZE
-	};
-
 	class VulkanRTShader
 	{
 	public:
+		VulkanRTShader(const std::string& filename, vk::Device device);
+	
+		const vk::UniqueShaderModule& GetModule() const {
+			return shaderModule;
+		}
 
+	protected:
+		vk::UniqueShaderModule shaderModule;
+		std::string entryPoint;
+
+	
 	};
 }
