@@ -28,22 +28,14 @@ namespace NCL::Rendering {
 	protected:
 		void SetupDevice(vk::PhysicalDeviceFeatures2& deviceFeatures) override;
 
-		UniqueVulkanRTShader LoadRTShader(const string& filename);
+		VulkanPipeline		displayPipeline;
+		UniqueVulkanShader	displayShader;
 
-		VulkanPipeline		pipeline;
+		VulkanPipeline		rtPipeline;
 		UniqueVulkanMesh	triMesh;
-		VulkanBVH			sceneBVH;
 
 		UniqueVulkanMesh	triangle;
-
-		UniqueVulkanRTShader	raygenShader;
-		UniqueVulkanRTShader	hitShader;
-		UniqueVulkanRTShader	missShader;
-		//const vk::PhysicalDeviceRayTracingPipelinePropertiesKHR&  GetRayTracingPipelineProperties() const { return rayPipelineProperties; }
-		//const vk::PhysicalDeviceAccelerationStructureFeaturesKHR& GetRayTracingAccelerationStructureProperties() const { return rayAccelFeatures; }
-	
-
-		vk::AccelerationStructureKHR	tlas;
+		UniqueVulkanMesh	quadMesh;
 
 		vk::UniqueDescriptorSetLayout	rayTraceLayout;
 		vk::UniqueDescriptorSet			rayTraceDescriptor;
@@ -53,18 +45,21 @@ namespace NCL::Rendering {
 
 		vk::UniqueDescriptorSetLayout	inverseCamLayout;
 		vk::UniqueDescriptorSet			inverseCamDescriptor;
-
 		VulkanBuffer					inverseMatrices;
 
+		vk::UniqueDescriptorSetLayout	displayImageLayout;
+		vk::UniqueDescriptorSet			displayImageDescriptor;
+
 		UniqueVulkanTexture				rayTexture;
+		vk::ImageView					imageWriteView;
 
-		vk::ImageView	imageWriteView;
+		ShaderBindingTable				bindingTable;
+		VulkanBVHBuilder				bvhBuilder;		
+		vk::UniqueAccelerationStructureKHR	tlas;
 
-		ShaderBindingTable bindingTable;
-
-		///*
-		//* RayTracing Stuff!
-		//*/
+		UniqueVulkanRTShader	raygenShader;
+		UniqueVulkanRTShader	hitShader;
+		UniqueVulkanRTShader	missShader;
 		vk::PhysicalDeviceRayTracingPipelinePropertiesKHR	rayPipelineProperties;
 		vk::PhysicalDeviceAccelerationStructureFeaturesKHR	rayAccelFeatures;
 	};

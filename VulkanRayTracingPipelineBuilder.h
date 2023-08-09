@@ -25,7 +25,7 @@ namespace NCL::Rendering {
 
 		VulkanRayTracingPipelineBuilder& WithShaderGroup(const vk::RayTracingShaderGroupCreateInfoKHR& group);
 
-		VulkanRayTracingPipelineBuilder& WithGeneralGroup(uint32_t raygenIndex);
+		VulkanRayTracingPipelineBuilder& WithGeneralGroup(uint32_t index);
 		VulkanRayTracingPipelineBuilder& WithTriangleHitGroup(uint32_t closestHit = VK_SHADER_UNUSED_KHR, uint32_t anyHit = VK_SHADER_UNUSED_KHR);
 		VulkanRayTracingPipelineBuilder& WithProceduralHitGroup(uint32_t intersection, uint32_t closestHit = VK_SHADER_UNUSED_KHR, uint32_t anyHit = VK_SHADER_UNUSED_KHR);
 

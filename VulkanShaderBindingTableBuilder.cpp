@@ -41,17 +41,22 @@ void VulkanShaderBindingTableBuilder::FillIndices(const vk::RayTracingPipelineCr
 			int shaderType = fromInfo->pGroups[i].generalShader;
 
 			if (fromInfo->pStages[shaderType].stage == vk::ShaderStageFlagBits::eRaygenKHR) {
-				handleIndices[(int)BindingTableOrder::RayGen].push_back(i + offset);
+				//handleIndices[(int)BindingTableOrder::RayGen].push_back(i + offset);
+				handleIndices[(int)BindingTableOrder::RayGen].push_back(fromInfo->pGroups[i].generalShader + offset);
+
 			}
 			else if (fromInfo->pStages[shaderType].stage == vk::ShaderStageFlagBits::eMissKHR) {
-				handleIndices[(int)BindingTableOrder::Miss].push_back(i + offset);
+				//handleIndices[(int)BindingTableOrder::Miss].push_back(i + offset);
+				handleIndices[(int)BindingTableOrder::Miss].push_back(fromInfo->pGroups[i].generalShader + offset);
 			}
 			else if(fromInfo->pStages[shaderType].stage == vk::ShaderStageFlagBits::eCallableKHR) {
-				handleIndices[(int)BindingTableOrder::Call].push_back(i + offset);
+				//handleIndices[(int)BindingTableOrder::Call].push_back(i + offset);
+				handleIndices[(int)BindingTableOrder::Call].push_back(fromInfo->pGroups[i].generalShader + offset);
 			}
 		}
 		else { //Must be a hit group
-			handleIndices[(int)BindingTableOrder::Hit].push_back(i + offset);
+			//handleIndices[(int)BindingTableOrder::Hit].push_back(i + offset);
+			handleIndices[(int)BindingTableOrder::Hit].push_back(fromInfo->pGroups[i].closestHitShader + offset);
 		}
 	}
 	offset += fromInfo->groupCount;
@@ -76,22 +81,10 @@ ShaderBindingTable VulkanShaderBindingTableBuilder::Build(vk::Device device, Vma
 
 	uint32_t handleCount = 1;
 	uint32_t handleSize = properties.shaderGroupHandleSize;
-	uint32_t alignedHandleSize = handleSize; //TODO
-
-	uint32_t groupAlign = handleSize; //TODO
-
-	table.regions[(int)BindingTableOrder::RayGen].stride = groupAlign;
-	table.regions[(int)BindingTableOrder::Hit].stride	= alignedHandleSize;
-	table.regions[(int)BindingTableOrder::Miss].stride	= alignedHandleSize;
-	table.regions[(int)BindingTableOrder::Call].stride	= alignedHandleSize;
-
-	table.regions[(int)BindingTableOrder::RayGen].size	= 0;
-	table.regions[(int)BindingTableOrder::Hit].size		= 0;
-	table.regions[(int)BindingTableOrder::Miss].size	= 0;
-	table.regions[(int)BindingTableOrder::Call].size	= 0;
+	uint32_t alignedHandleSize = MakeMultipleOf(handleSize, properties.shaderGroupHandleAlignment);
 
 	int offset = 0;
-	FillIndices(pipeCreateInfo, offset);
+	FillIndices(pipeCreateInfo, offset); //Fills the handleIndices vectors
 
 	uint32_t numShaderGroups = pipeCreateInfo->groupCount;
 	for (auto& i : libraries) {
@@ -99,22 +92,18 @@ ShaderBindingTable VulkanShaderBindingTableBuilder::Build(vk::Device device, Vma
 		FillIndices(i, offset);
 	}
 
-
-
-	uint32_t bindingCounts[(int)BindingTableOrder::SIZE];
-
 	uint32_t totalHandleSize = numShaderGroups * handleSize;
-
 	std::vector<uint8_t> handles(totalHandleSize);
-
 	auto result = device.getRayTracingShaderGroupHandlesKHR(pipeline, 0, numShaderGroups, totalHandleSize, handles.data());
 
 	uint32_t totalAllocSize = 0;
+
 	for (int i = 0; i < 4; ++i) {
-		table.regions[i].size = table.regions[i].stride * handleIndices[i].size();
+		table.regions[i].size	= MakeMultipleOf(alignedHandleSize * handleIndices[i].size(), properties.shaderGroupBaseAlignment);
+		table.regions[i].stride = alignedHandleSize;
 		totalAllocSize += table.regions[i].size;
-		totalAllocSize = MakeMultipleOf(totalAllocSize, properties.shaderGroupBaseAlignment);
 	}
+	table.regions[0].stride = table.regions[0].size;
 
 	table.tableBuffer = VulkanBufferBuilder(totalAllocSize, debugName + " SBT Buffer")
 		.WithBufferUsage(vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eShaderDeviceAddressKHR | vk::BufferUsageFlagBits::eShaderBindingTableKHR)
@@ -124,19 +113,17 @@ ShaderBindingTable VulkanShaderBindingTableBuilder::Build(vk::Device device, Vma
 
 	vk::DeviceAddress address = device.getBufferAddress(vk::BufferDeviceAddressInfo(table.tableBuffer.buffer));
 
-	table.regions[0].deviceAddress = address;
-	for (int i = 1; i < 4; ++i) {
-		table.regions[i].deviceAddress = MakeMultipleOf(table.regions[i - 1].deviceAddress + table.regions[i - 1].size, properties.shaderGroupBaseAlignment);
-	}
-
 	char* bufData = (char*)table.tableBuffer.Map();
 	int dataOffset = 0;
-	for (int i = 0; i < 4; ++i) {
-		for (int j = 0; j < handleIndices[i].size(); ++j) {
-			memcpy(bufData + dataOffset, handles.data() + handleIndices[i][j], handleSize);
-			dataOffset += handleSize;
+	for (int i = 0; i < 4; ++i) { //For each group type
+		int dataOffsetStart = dataOffset;
+		table.regions[i].deviceAddress = address + dataOffsetStart;
+	
+		for (int j = 0; j < handleIndices[i].size(); ++j) { //For entries in that group
+			memcpy(bufData + dataOffset, handles.data() + (handleIndices[i][j] * handleSize), handleSize);
+			dataOffset += alignedHandleSize;
 		}
-		dataOffset = MakeMultipleOf(dataOffset, properties.shaderGroupBaseAlignment);
+		dataOffset = dataOffsetStart + table.regions[i].size;
 	}
 
 	table.tableBuffer.Unmap();

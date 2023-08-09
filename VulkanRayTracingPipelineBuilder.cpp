@@ -14,11 +14,9 @@ using namespace NCL;
 using namespace Rendering;
 
 VulkanRayTracingPipelineBuilder::VulkanRayTracingPipelineBuilder(const std::string& debugName) : VulkanPipelineBuilderBase(debugName){
-
 }
 
 VulkanRayTracingPipelineBuilder::~VulkanRayTracingPipelineBuilder() {
-
 }
 
 VulkanRayTracingPipelineBuilder& VulkanRayTracingPipelineBuilder::WithRecursionDepth(uint32_t count) {
@@ -31,12 +29,12 @@ VulkanRayTracingPipelineBuilder& VulkanRayTracingPipelineBuilder::WithShaderGrou
 	return *this;
 }
 
-VulkanRayTracingPipelineBuilder& VulkanRayTracingPipelineBuilder::WithGeneralGroup(uint32_t raygenIndex) {
+VulkanRayTracingPipelineBuilder& VulkanRayTracingPipelineBuilder::WithGeneralGroup(uint32_t index) {
 	vk::RayTracingShaderGroupCreateInfoKHR groupCreateInfo;
 
 	groupCreateInfo.type = vk::RayTracingShaderGroupTypeKHR::eGeneral;
 	groupCreateInfo.intersectionShader	= VK_SHADER_UNUSED_KHR;
-	groupCreateInfo.generalShader		= raygenIndex;
+	groupCreateInfo.generalShader		= index;
 	groupCreateInfo.closestHitShader	= VK_SHADER_UNUSED_KHR;
 	groupCreateInfo.anyHitShader		= VK_SHADER_UNUSED_KHR;
 
@@ -85,8 +83,6 @@ VulkanRayTracingPipelineBuilder& VulkanRayTracingPipelineBuilder::WithShader(Vul
 }
 
 VulkanPipeline VulkanRayTracingPipelineBuilder::Build(vk::Device device, vk::PipelineCache cache) {
-	VulkanPipeline output;
-
 	for (const auto& i : entries) {
 		vk::PipelineShaderStageCreateInfo stageInfo;
 
@@ -95,8 +91,6 @@ VulkanPipeline VulkanRayTracingPipelineBuilder::Build(vk::Device device, vk::Pip
 		stageInfo.module = *i.shader->GetModule();
 		shaderStages.push_back(stageInfo);
 	}
-
-	//createInfo.flags |= vk::PipelineCreateFlagBits::Li
 
 	pipelineCreate.groupCount	= shaderGroups.size();
 	pipelineCreate.pGroups		= shaderGroups.data();
@@ -108,17 +102,16 @@ VulkanPipeline VulkanRayTracingPipelineBuilder::Build(vk::Device device, vk::Pip
 		.setSetLayouts(allLayouts)
 		.setPushConstantRanges(allPushConstants);
 
+	VulkanPipeline output;
 	output.layout = device.createPipelineLayoutUnique(pipeLayoutCreate);
 
 	pipelineCreate.layout = *output.layout;
 
-	//VkPipeline tempPipe = device.createRayTracingPipelineKHR({}, cache, 1, &pipelineCreate, nullptr);
+	output.pipeline = device.createRayTracingPipelineKHRUnique({}, cache, pipelineCreate).value;
 
-	vk::Pipeline tempPipe = device.createRayTracingPipelineKHR({}, cache, pipelineCreate).value;
-
-	//device.createRayTracingPipelinesKHR({}, cache, createInfo);
-
-	output.pipeline = vk::UniquePipeline(tempPipe);
+	if (!debugName.empty()) {
+		Vulkan::SetDebugName(device, vk::ObjectType::ePipeline, Vulkan::GetVulkanHandle(*output.pipeline), debugName);
+	}
 
 	return output;
 }
