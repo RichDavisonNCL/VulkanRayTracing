@@ -10,6 +10,7 @@ License: MIT (see LICENSE file at the top of the source tree)
 
 using namespace NCL;
 using namespace Rendering;
+using namespace Vulkan;
 
 VulkanShaderBindingTableBuilder::VulkanShaderBindingTableBuilder(const std::string& inDebugName) {
 	debugName = debugName;
@@ -105,11 +106,11 @@ ShaderBindingTable VulkanShaderBindingTableBuilder::Build(vk::Device device, Vma
 	}
 	table.regions[0].stride = table.regions[0].size;
 
-	table.tableBuffer = VulkanBufferBuilder(totalAllocSize, debugName + " SBT Buffer")
+	table.tableBuffer = BufferBuilder(device, allocator)
 		.WithBufferUsage(vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eShaderDeviceAddressKHR | vk::BufferUsageFlagBits::eShaderBindingTableKHR)
 		.WithDeviceAddresses()
 		.WithHostVisibility()
-		.Build(device, allocator);
+		.Build(totalAllocSize, debugName + " SBT Buffer");
 
 	vk::DeviceAddress address = device.getBufferAddress(vk::BufferDeviceAddressInfo(table.tableBuffer.buffer));
 

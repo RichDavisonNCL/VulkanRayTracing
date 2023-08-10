@@ -8,8 +8,10 @@ License: MIT (see LICENSE file at the top of the source tree)
 #include "TestRayTrace.h"
 #include "VulkanRayTracingPipelineBuilder.h"
 #include "../GLTFLoader/GLTFLoader.h"
+
 using namespace NCL;
 using namespace Rendering;
+using namespace Vulkan;
 
 TestRayTrace::TestRayTrace(Window& window) : VulkanTutorialRenderer(window) , bvhBuilder("Test"){
 	majorVersion = 1;
@@ -19,7 +21,6 @@ TestRayTrace::TestRayTrace(Window& window) : VulkanTutorialRenderer(window) , bv
 }
 
 TestRayTrace::~TestRayTrace() {
-
 }
 
 void TestRayTrace::SetupDevice(vk::PhysicalDeviceFeatures2& deviceFeatures) {
@@ -51,22 +52,23 @@ void TestRayTrace::SetupTutorial() {
 	GetPhysicalDevice().getProperties2(&props);
 
 	triangle = GenerateTriangle();
+	//vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR)
 
 	raygenShader	= UniqueVulkanRTShader(new VulkanRTShader("RayTrace/raygen.rgen.spv", GetDevice())); 
 	hitShader		= UniqueVulkanRTShader(new VulkanRTShader("RayTrace/closesthit.rchit.spv", GetDevice())); 
 	missShader		= UniqueVulkanRTShader(new VulkanRTShader("RayTrace/miss.rmiss.spv", GetDevice()));
 
-	rayTraceLayout = VulkanDescriptorSetLayoutBuilder("Ray Trace TLAS Layout")
+	rayTraceLayout = DescriptorSetLayoutBuilder(GetDevice())
 		.WithAccelStructures(1)
-		.Build(GetDevice());
+		.Build("Ray Trace TLAS Layout");
 
-	imageLayout = VulkanDescriptorSetLayoutBuilder("Ray Trace Image Layout")
+	imageLayout = DescriptorSetLayoutBuilder(GetDevice())
 		.WithStorageImages(1)
-		.Build(GetDevice());
+		.Build("Ray Trace Image Layout");
 
-	inverseCamLayout = VulkanDescriptorSetLayoutBuilder("Camera Inverse Matrix Layout")
+	inverseCamLayout = DescriptorSetLayoutBuilder(GetDevice())
 		.WithUniformBuffers(1)
-		.Build(GetDevice());
+		.Build("Camera Inverse Matrix Layout");
 
 	tlas = bvhBuilder
 		.WithObject(&*triangle, Matrix4::Translation({ 0,0,-100.0f }) * Matrix4::Scale({2,4,2}))
@@ -78,11 +80,11 @@ void TestRayTrace::SetupTutorial() {
 	imageDescriptor			= BuildUniqueDescriptorSet(*imageLayout);
 	inverseCamDescriptor	= BuildUniqueDescriptorSet(*inverseCamLayout);
 
-	inverseMatrices = VulkanBufferBuilder(sizeof(Matrix4) * 2, "InverseMatrices")
+	inverseMatrices = BufferBuilder(GetDevice(), GetMemoryAllocator())
 		.WithBufferUsage(vk::BufferUsageFlagBits::eUniformBuffer)
 		.WithHostVisibility()
 		.WithPersistentMapping()
-		.Build(GetDevice(), GetMemoryAllocator());
+		.Build(sizeof(Matrix4) * 2, "InverseMatrices");
 
 	rayTexture = VulkanTexture::CreateColourTexture(this, windowSize.x, windowSize.y, "RayTraceResult", 
 		vk::Format::eR32G32B32A32Sfloat, 
@@ -95,7 +97,7 @@ void TestRayTrace::SetupTutorial() {
 
 	WriteTLASDescriptor(*rayTraceDescriptor, 0, *tlas);
 
-	auto rtPipeBuilder = VulkanRayTracingPipelineBuilder("RT Pipeline")
+	auto rtPipeBuilder = VulkanRayTracingPipelineBuilder(GetDevice())
 		.WithRecursionDepth(1)
 		.WithShader(*raygenShader, vk::ShaderStageFlagBits::eRaygenKHR)		//0
 		.WithShader(*missShader, vk::ShaderStageFlagBits::eMissKHR)			//1
@@ -110,7 +112,7 @@ void TestRayTrace::SetupTutorial() {
 		.WithDescriptorSetLayout(2, *inverseCamLayout)
 		.WithDescriptorSetLayout(3, *imageLayout);
 
-	rtPipeline = rtPipeBuilder.Build(GetDevice());
+	rtPipeline = rtPipeBuilder.Build("RT Pipeline");
 
 	bindingTable = VulkanShaderBindingTableBuilder("SBT")
 		.WithProperties(rayPipelineProperties)
@@ -118,28 +120,28 @@ void TestRayTrace::SetupTutorial() {
 		.Build(GetDevice(), GetMemoryAllocator());
 
 	//We also need some Vulkan things for displaying the result!
-	displayImageLayout = VulkanDescriptorSetLayoutBuilder("Raster Image Layout")
+	displayImageLayout = DescriptorSetLayoutBuilder(GetDevice())
 		.WithSamplers(1, vk::ShaderStageFlagBits::eFragment)
-		.Build(GetDevice());
+		.Build("Raster Image Layout");
 
 	displayImageDescriptor = BuildUniqueDescriptorSet(*displayImageLayout);
 	WriteImageDescriptor(*displayImageDescriptor, 0, 0, *rayTexture, *defaultSampler, vk::ImageLayout::eShaderReadOnlyOptimal);
 
 	quadMesh = GenerateQuad();
 
-	displayShader = VulkanShaderBuilder("Result Display Shader")
+	displayShader = ShaderBuilder(GetDevice())
 		.WithVertexBinary("Display.vert.spv")
 		.WithFragmentBinary("Display.frag.spv")
-		.Build(GetDevice());
+		.Build("Result Display Shader");
 
-	displayPipeline = VulkanPipelineBuilder("Result display pipeline")
+	displayPipeline = PipelineBuilder(GetDevice())
 		.WithVertexInputState(quadMesh->GetVertexInputState())
 		.WithTopology(vk::PrimitiveTopology::eTriangleStrip)
 		.WithShader(displayShader)
 		.WithDescriptorSetLayout(0, *displayImageLayout)
 		.WithColourFormats({ GetSurfaceFormat() })
 		.WithDepthStencilFormat(depthBuffer->GetFormat())
-		.Build(GetDevice());
+		.Build("Result display pipeline");
 }
 
 void TestRayTrace::RenderFrame() {
@@ -163,7 +165,7 @@ void TestRayTrace::RenderFrame() {
 	);
 
 	//Flip the texture we rendered into into display mode
-	Vulkan::ImageTransitionBarrier(frameCmds, *rayTexture,
+	ImageTransitionBarrier(frameCmds, *rayTexture,
 		vk::ImageLayout::eGeneral,
 		vk::ImageLayout::eShaderReadOnlyOptimal,
 		vk::ImageAspectFlagBits::eColor,
@@ -176,11 +178,11 @@ void TestRayTrace::RenderFrame() {
 
 	BeginDefaultRendering(frameCmds);
 	frameCmds.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *displayPipeline.layout, 0, 1, &*displayImageDescriptor, 0, nullptr);
-	SubmitDrawCall(frameCmds, *quadMesh);
-	EndRendering(frameCmds);
+	DrawMesh(frameCmds, *quadMesh);
+	frameCmds.endRendering();
 
 	//Flip texture back for the next frame
-	Vulkan::ImageTransitionBarrier(frameCmds, *rayTexture,
+	ImageTransitionBarrier(frameCmds, *rayTexture,
 		vk::ImageLayout::eShaderReadOnlyOptimal,
 		vk::ImageLayout::eGeneral,
 		vk::ImageAspectFlagBits::eColor,

@@ -14,7 +14,7 @@ namespace NCL::Maths {
 	class Matrix4;
 }
 
-namespace NCL::Rendering {
+namespace NCL::Rendering::Vulkan {
 	enum class BindingTableOrder {
 		RayGen,
 		Hit,

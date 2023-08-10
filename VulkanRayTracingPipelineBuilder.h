@@ -13,12 +13,12 @@ namespace NCL::Maths {
 	class Matrix4;
 }
 
-namespace NCL::Rendering {
+namespace NCL::Rendering::Vulkan {
 
 	class VulkanRayTracingPipelineBuilder : 
-		public VulkanPipelineBuilderBase< VulkanRayTracingPipelineBuilder, vk::RayTracingPipelineCreateInfoKHR> {
+		public PipelineBuilderBase< VulkanRayTracingPipelineBuilder, vk::RayTracingPipelineCreateInfoKHR> {
 	public:
-		VulkanRayTracingPipelineBuilder(const std::string& debugName = "");
+		VulkanRayTracingPipelineBuilder(vk::Device device);
 		~VulkanRayTracingPipelineBuilder();
 
 		VulkanRayTracingPipelineBuilder& WithShader(VulkanRTShader& shader, vk::ShaderStageFlagBits stage, const string& entry = "main");
@@ -31,7 +31,7 @@ namespace NCL::Rendering {
 
 		VulkanRayTracingPipelineBuilder& WithRecursionDepth(uint32_t count);
 
-		VulkanPipeline Build(vk::Device device, vk::PipelineCache cache = {});
+		VulkanPipeline Build(const std::string& debugName = "", vk::PipelineCache cache = {});
 
 	protected:
 		struct ShaderEntry {

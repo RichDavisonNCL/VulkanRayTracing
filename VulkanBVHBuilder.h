@@ -14,11 +14,7 @@ namespace NCL::Maths {
 	class Matrix4;
 }
 
-namespace NCL::Rendering {
-	//class VulkanBVH {
-	//	VulkanBuffer buffer;
-	//};
-
+namespace NCL::Rendering::Vulkan {
 	struct VulkanBVHEntry {
 		Matrix4		modelMat;
 		uint32_t	meshID;

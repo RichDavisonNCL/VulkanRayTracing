@@ -12,8 +12,9 @@ License: MIT (see LICENSE file at the top of the source tree)
 
 using namespace NCL;
 using namespace Rendering;
+using namespace Vulkan;
 
-VulkanRayTracingPipelineBuilder::VulkanRayTracingPipelineBuilder(const std::string& debugName) : VulkanPipelineBuilderBase(debugName){
+VulkanRayTracingPipelineBuilder::VulkanRayTracingPipelineBuilder(vk::Device device) : PipelineBuilderBase(device){
 }
 
 VulkanRayTracingPipelineBuilder::~VulkanRayTracingPipelineBuilder() {
@@ -82,7 +83,7 @@ VulkanRayTracingPipelineBuilder& VulkanRayTracingPipelineBuilder::WithShader(Vul
 	return *this;
 }
 
-VulkanPipeline VulkanRayTracingPipelineBuilder::Build(vk::Device device, vk::PipelineCache cache) {
+VulkanPipeline VulkanRayTracingPipelineBuilder::Build(const std::string& debugName, vk::PipelineCache cache) {
 	for (const auto& i : entries) {
 		vk::PipelineShaderStageCreateInfo stageInfo;
 
@@ -103,14 +104,14 @@ VulkanPipeline VulkanRayTracingPipelineBuilder::Build(vk::Device device, vk::Pip
 		.setPushConstantRanges(allPushConstants);
 
 	VulkanPipeline output;
-	output.layout = device.createPipelineLayoutUnique(pipeLayoutCreate);
+	output.layout = sourceDevice.createPipelineLayoutUnique(pipeLayoutCreate);
 
 	pipelineCreate.layout = *output.layout;
 
-	output.pipeline = device.createRayTracingPipelineKHRUnique({}, cache, pipelineCreate).value;
+	output.pipeline = sourceDevice.createRayTracingPipelineKHRUnique({}, cache, pipelineCreate).value;
 
 	if (!debugName.empty()) {
-		Vulkan::SetDebugName(device, vk::ObjectType::ePipeline, Vulkan::GetVulkanHandle(*output.pipeline), debugName);
+		SetDebugName(sourceDevice, vk::ObjectType::ePipeline, GetVulkanHandle(*output.pipeline), debugName);
 	}
 
 	return output;

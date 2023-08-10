@@ -11,7 +11,7 @@ License: MIT (see LICENSE file at the top of the source tree)
 #include "../VulkanTutorials/VulkanTutorialRenderer.h"
 #include "VulkanShaderBindingTableBuilder.h"
 
-namespace NCL::Rendering {
+namespace NCL::Rendering::Vulkan {
 	using UniqueVulkanRTShader = std::unique_ptr<VulkanRTShader>;
 	using SharedVulkanRTShader = std::shared_ptr<VulkanRTShader>;
 
