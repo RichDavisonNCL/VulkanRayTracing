@@ -5,7 +5,7 @@ Author:Rich Davison
 Contact:richgdavison@gmail.com
 License: MIT (see LICENSE file at the top of the source tree)
 *//////////////////////////////////////////////////////////////////////////////
-#include "TestRayTrace.h"
+#include "TestGLTFRayTrace.h"
 #include "VulkanRayTracingPipelineBuilder.h"
 #include "../GLTFLoader/GLTFLoader.h"
 
@@ -13,17 +13,17 @@ using namespace NCL;
 using namespace Rendering;
 using namespace Vulkan;
 
-TestRayTrace::TestRayTrace(Window& window) : VulkanTutorialRenderer(window){
+TestGLTFRayTrace::TestGLTFRayTrace(Window& window) : VulkanTutorialRenderer(window) {
 	majorVersion = 1;
 	minorVersion = 3;
 
 	autoBeginDynamicRendering = false;
 }
 
-TestRayTrace::~TestRayTrace() {
+TestGLTFRayTrace::~TestGLTFRayTrace() {
 }
 
-void TestRayTrace::SetupDevice(vk::PhysicalDeviceFeatures2& deviceFeatures) {
+void TestGLTFRayTrace::SetupDevice(vk::PhysicalDeviceFeatures2& deviceFeatures) {
 	deviceExtensions.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
 	deviceExtensions.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
 	deviceExtensions.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
@@ -43,16 +43,24 @@ void TestRayTrace::SetupDevice(vk::PhysicalDeviceFeatures2& deviceFeatures) {
 	allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 }
 
-void TestRayTrace::SetupTutorial() {
+void TestGLTFRayTrace::SetupTutorial() {
 	VulkanTutorialRenderer::SetupTutorial();
+
+	loader.Load("Sponza/Sponza.gltf",
+		[](void) ->  Mesh* {return new VulkanMesh(); },
+		[&](std::string& input) ->  VulkanTexture* {return VulkanTexture::TextureFromFile(this, input).release(); }
+	);
+
+	for (const auto& m : loader.outMeshes) {
+		VulkanMesh* loadedMesh = (VulkanMesh*)m;
+		loadedMesh->UploadToGPU(this,	vk::BufferUsageFlagBits::eShaderDeviceAddress | 
+										vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR);
+	}
 
 	vk::PhysicalDeviceProperties2 props;
 	props.pNext = &rayPipelineProperties;
 
 	GetPhysicalDevice().getProperties2(&props);
-
-	triangle = GenerateTriangle();
-	//vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR)
 
 	raygenShader	= UniqueVulkanRTShader(new VulkanRTShader("RayTrace/raygen.rgen.spv", GetDevice())); 
 	hitShader		= UniqueVulkanRTShader(new VulkanRTShader("RayTrace/closesthit.rchit.spv", GetDevice())); 
@@ -70,13 +78,18 @@ void TestRayTrace::SetupTutorial() {
 		.WithUniformBuffers(1)
 		.Build("Camera Inverse Matrix Layout");
 
+
+	for (const auto& m : loader.outMeshes) {
+		VulkanMesh* vm = (VulkanMesh*)m;
+		bvhBuilder.WithObject(vm, Matrix4::Translation({ 0,0,0 }) * Matrix4::Scale({ 1,1,1 }));
+	}
+
 	tlas = bvhBuilder
-		.WithObject(&*triangle, Matrix4::Translation({ 0,0,-100.0f }) * Matrix4::Scale({2,4,2}))
 		.WithCommandQueue(GetQueue(CommandBufferType::AsyncCompute))
 		.WithCommandPool(GetCommandPool(CommandBufferType::AsyncCompute)) 
 		.WithDevice(GetDevice())
 		.WithAllocator(GetMemoryAllocator())
-		.Build(vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace, "Test TLAS");
+		.Build(vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace, "GLTF BLAS");
 
 	rayTraceDescriptor		= BuildUniqueDescriptorSet(*rayTraceLayout);
 	imageDescriptor			= BuildUniqueDescriptorSet(*imageLayout);
@@ -146,7 +159,7 @@ void TestRayTrace::SetupTutorial() {
 		.Build("Result display pipeline");
 }
 
-void TestRayTrace::RenderFrame() {
+void TestGLTFRayTrace::RenderFrame() {
 	frameCmds.bindPipeline(vk::PipelineBindPoint::eRayTracingKHR, rtPipeline);
 
 	vk::DescriptorSet sets[4] = {
@@ -193,7 +206,7 @@ void TestRayTrace::RenderFrame() {
 	);
 }
 
-void TestRayTrace::Update(float dt) {
+void TestGLTFRayTrace::Update(float dt) {
 	VulkanTutorialRenderer::Update(dt);
 
 	Matrix4* inverseMatrixData = (Matrix4*)inverseMatrices.Data();

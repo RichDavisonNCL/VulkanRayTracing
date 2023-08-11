@@ -5,6 +5,7 @@ set(PROJECT_NAME VulkanRayTracing)
 ################################################################################
 set(Header_Files
 	"TestRayTrace.h"
+	"TestGLTFRayTrace.h"
 	"VulkanBVHBuilder.h"
 	"VulkanRTShader.h" 
 	"VulkanRayTracingPipelineBuilder.h"	
@@ -14,6 +15,7 @@ source_group("Header Files" FILES ${Header_Files})
 
 set(Source_Files
 	"TestRayTrace.cpp"
+	"TestGLTFRayTrace.cpp"
 	"VulkanBVHBuilder.cpp"
 	"VulkanRTShader.cpp"   
 	"VulkanRayTracingPipelineBuilder.cpp"

@@ -17,9 +17,6 @@ using namespace Vulkan;
 VulkanBVHBuilder::VulkanBVHBuilder() {
 }
 
-VulkanBVHBuilder::VulkanBVHBuilder(const std::string& debugName) {
-}
-
 VulkanBVHBuilder::~VulkanBVHBuilder() {
 }
 
@@ -58,9 +55,24 @@ VulkanBVHBuilder& VulkanBVHBuilder::WithCommandPool(vk::CommandPool inPool) {
 	return *this;
 }
 
-vk::UniqueAccelerationStructureKHR VulkanBVHBuilder::Build(vk::Device device, VmaAllocator allocator, vk::BuildAccelerationStructureFlagsKHR inFlags) {
-	BuildBLAS(device, allocator, inFlags);
-	BuildTLAS(device, allocator, inFlags);
+VulkanBVHBuilder& VulkanBVHBuilder::WithDevice(vk::Device inDevice) {
+	sourceDevice = inDevice;
+	return *this;
+}
+
+VulkanBVHBuilder& VulkanBVHBuilder::WithAllocator(VmaAllocator inAllocator) {
+	sourceAllocator = inAllocator;
+	return *this;
+}
+
+vk::UniqueAccelerationStructureKHR VulkanBVHBuilder::Build(vk::BuildAccelerationStructureFlagsKHR inFlags, const std::string& debugName) {
+	BuildBLAS(sourceDevice, sourceAllocator, inFlags);
+	BuildTLAS(sourceDevice, sourceAllocator, inFlags);
+
+	if (!debugName.empty()) {
+		SetDebugName(sourceDevice, vk::ObjectType::eAccelerationStructureKHR, GetVulkanHandle(*tlas), debugName);
+	}
+
 	return std::move(tlas);
 }
 
@@ -87,18 +99,39 @@ void VulkanBVHBuilder::BuildBLAS(vk::Device device, VmaAllocator allocator, vk::
 		if (hasIndices) {		
 			triData.indexType = iFormat;
 			triData.indexData.deviceAddress = device.getBufferAddress(vk::BufferDeviceAddressInfo(iBuffer)) + iOffset;
+			
 		}
 
 		triData.maxVertex = i.first->GetVertexCount();
 
 		blasBuildInfo.resize(blasBuildInfo.size() + 1);
 
-		blasBuildInfo.back().geometry.setGeometryType(vk::GeometryTypeKHR::eTriangles)
-										.setFlags(vk::GeometryFlagBitsKHR::eOpaque)
-										.geometry.setTriangles(triData);
+		BLASEntry& blasEntry = blasBuildInfo.back();
 
-		blasBuildInfo.back().rangeInfo.primitiveCount		= i.first->GetPrimitiveCount();
-		bool a = true;
+		size_t subMeshCount = i.first->GetSubMeshCount();
+
+		blasEntry.buildInfo.geometryCount	= subMeshCount;
+
+		blasEntry.geometries.resize(subMeshCount);
+		blasEntry.ranges.resize(subMeshCount);
+		blasEntry.maxPrims.resize(subMeshCount);
+
+		for (int j = 0; j < subMeshCount; ++j) {
+			const SubMesh* m = i.first->GetSubMesh(j);
+
+			blasEntry.geometries[j].setGeometryType(vk::GeometryTypeKHR::eTriangles)
+												.setFlags(vk::GeometryFlagBitsKHR::eOpaque)
+												.geometry.setTriangles(triData);
+
+			blasEntry.geometries[j].geometry.triangles.maxVertex = 1;// m->count;
+
+			blasEntry.ranges[j].primitiveCount	= i.first->GetPrimitiveCount(j);
+			blasEntry.ranges[j].firstVertex		= m->base;
+			blasEntry.ranges[j].primitiveOffset = m->start *(iFormat == vk::IndexType::eUint32 ? 4 : 2);
+			//blasBuildInfo.back().geometries[i].geometry.triangles.
+			blasEntry.maxPrims[j] = i.first->GetPrimitiveCount(j); //??????
+				//= std::max(blasEntry.maxPrims, blasEntry.ranges[j].primitiveCount);
+		}
 	}
 
 	vk::DeviceSize totalSize	= 0;
@@ -107,14 +140,12 @@ void VulkanBVHBuilder::BuildBLAS(vk::Device device, VmaAllocator allocator, vk::
 	for (auto& i : blasBuildInfo) {	//Go through each of the added entries to build up data...
 		i.buildInfo.type = vk::AccelerationStructureTypeKHR::eBottomLevel;
 		i.buildInfo.mode = vk::BuildAccelerationStructureModeKHR::eBuild;
-		i.buildInfo.geometryCount = 1; //TODO
-		i.buildInfo.pGeometries = &i.geometry;
+		i.buildInfo.geometryCount	= i.geometries.size(); //TODO
+		i.buildInfo.pGeometries		= i.geometries.data();
 		i.buildInfo.flags |= inFlags;
 
-		uint32_t maxPrimCount = i.rangeInfo.primitiveCount;
-
 		device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice,
-			&i.buildInfo, &maxPrimCount, &i.sizeInfo);
+			&i.buildInfo, i.maxPrims.data(), &i.sizeInfo);
 
 		totalSize	+= i.sizeInfo.accelerationStructureSize;
 		scratchSize  = std::max(scratchSize, i.sizeInfo.buildScratchSize);
@@ -147,7 +178,7 @@ void VulkanBVHBuilder::BuildBLAS(vk::Device device, VmaAllocator allocator, vk::
 		i.buildInfo.dstAccelerationStructure	= *i.accelStructure;
 		i.buildInfo.scratchData.deviceAddress	= scratchAddr;
 
-		vk::AccelerationStructureBuildRangeInfoKHR* rangeInfo = &i.rangeInfo;
+		const vk::AccelerationStructureBuildRangeInfoKHR* rangeInfo = i.ranges.data();
 
 		buffer->buildAccelerationStructuresKHR(1, &i.buildInfo, &rangeInfo);
 					

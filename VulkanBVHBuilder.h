@@ -21,28 +21,31 @@ namespace NCL::Rendering::Vulkan {
 		uint32_t	hitID;
 		uint32_t	mask;
 	};
-
+					
 	struct BLASEntry {
-		vk::AccelerationStructureGeometryKHR			geometry;
-		vk::AccelerationStructureBuildRangeInfoKHR		rangeInfo;
+		VulkanBuffer buffer;
 		vk::AccelerationStructureBuildGeometryInfoKHR	buildInfo;
 		vk::AccelerationStructureBuildSizesInfoKHR		sizeInfo;
 		vk::UniqueAccelerationStructureKHR				accelStructure;
-		VulkanBuffer buffer;
+
+		std::vector<vk::AccelerationStructureBuildRangeInfoKHR>	ranges;
+		std::vector<vk::AccelerationStructureGeometryKHR>		geometries;
+		std::vector<uint32_t> maxPrims;
 	};
 
 	class VulkanBVHBuilder	{
 	public:
 		VulkanBVHBuilder();
-		VulkanBVHBuilder(const std::string& debugName = "");
 		~VulkanBVHBuilder();
 
 		VulkanBVHBuilder& WithObject(VulkanMesh* m, const Matrix4& transform, uint32_t mask = ~0, uint32_t hitID = 0);
 
+		VulkanBVHBuilder& WithDevice(vk::Device inDevice);
+		VulkanBVHBuilder& WithAllocator(VmaAllocator inAllocator);
 		VulkanBVHBuilder& WithCommandQueue(vk::Queue inQueue);
 		VulkanBVHBuilder& WithCommandPool(vk::CommandPool inPool);
 
-		vk::UniqueAccelerationStructureKHR Build(vk::Device device, VmaAllocator allocator, vk::BuildAccelerationStructureFlagsKHR flags);
+		vk::UniqueAccelerationStructureKHR Build(vk::BuildAccelerationStructureFlagsKHR flags, const std::string& debugName = "");
 	protected:
 
 		void BuildBLAS(vk::Device device, VmaAllocator allocator, vk::BuildAccelerationStructureFlagsKHR flags);
@@ -53,16 +56,16 @@ namespace NCL::Rendering::Vulkan {
 		std::map<VulkanMesh*, uint32_t> uniqueMeshes;
 
 		std::vector<VulkanBVHEntry> entries;
-
 		std::vector<VulkanMesh*>	meshes;
 		std::vector<Matrix4>		transforms;
-
-		std::vector< BLASEntry> blasBuildInfo;
+		std::vector< BLASEntry>		blasBuildInfo;
 
 		vk::Queue		queue;
 		vk::CommandPool pool;
+		vk::Device		sourceDevice;
+		VmaAllocator	sourceAllocator;
 
-		vk::UniqueAccelerationStructureKHR tlas;
-		VulkanBuffer					tlasBuffer;
+		vk::UniqueAccelerationStructureKHR	tlas;
+		VulkanBuffer						tlasBuffer;
 	};
 }
