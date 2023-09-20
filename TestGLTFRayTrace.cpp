@@ -48,11 +48,11 @@ void TestGLTFRayTrace::SetupTutorial() {
 
 	loader.Load("Sponza/Sponza.gltf",
 		[](void) ->  Mesh* {return new VulkanMesh(); },
-		[&](std::string& input) ->  VulkanTexture* {return VulkanTexture::TextureFromFile(this, input).release(); }
+		[&](std::string& input) ->  VulkanTexture* {return LoadTexture(input).release(); }
 	);
 
 	for (const auto& m : loader.outMeshes) {
-		VulkanMesh* loadedMesh = (VulkanMesh*)m;
+		VulkanMesh* loadedMesh = (VulkanMesh*)m.get();
 		loadedMesh->UploadToGPU(this,	vk::BufferUsageFlagBits::eShaderDeviceAddress | 
 										vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR);
 	}
@@ -80,13 +80,13 @@ void TestGLTFRayTrace::SetupTutorial() {
 
 
 	for (const auto& m : loader.outMeshes) {
-		VulkanMesh* vm = (VulkanMesh*)m;
+		VulkanMesh* vm = (VulkanMesh*)m.get();
 		bvhBuilder.WithObject(vm, Matrix4::Translation({ 0,0,0 }) * Matrix4::Scale({ 1,1,1 }));
 	}
 
 	tlas = bvhBuilder
-		.WithCommandQueue(GetQueue(CommandBufferType::AsyncCompute))
-		.WithCommandPool(GetCommandPool(CommandBufferType::AsyncCompute)) 
+		.WithCommandQueue(GetQueue(CommandBuffer::AsyncCompute))
+		.WithCommandPool(GetCommandPool(CommandBuffer::AsyncCompute)) 
 		.WithDevice(GetDevice())
 		.WithAllocator(GetMemoryAllocator())
 		.Build(vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace, "GLTF BLAS");
@@ -172,10 +172,10 @@ void TestGLTFRayTrace::RenderFrame() {
 	frameCmds.bindDescriptorSets(vk::PipelineBindPoint::eRayTracingKHR, *rtPipeline.layout, 0, 4, sets, 0, nullptr);
 
 	frameCmds.traceRaysKHR(
-		&bindingTable.regions[(int)BindingTableOrder::RayGen],
-		&bindingTable.regions[(int)BindingTableOrder::Miss],
-		&bindingTable.regions[(int)BindingTableOrder::Hit],
-		&bindingTable.regions[(int)BindingTableOrder::Call],
+		&bindingTable.regions[BindingTableOrder::RayGen],
+		&bindingTable.regions[BindingTableOrder::Miss],
+		&bindingTable.regions[BindingTableOrder::Hit],
+		&bindingTable.regions[BindingTableOrder::Call],
 		windowSize.x, windowSize.y, 1
 	);
 
@@ -185,8 +185,7 @@ void TestGLTFRayTrace::RenderFrame() {
 		vk::ImageLayout::eShaderReadOnlyOptimal,
 		vk::ImageAspectFlagBits::eColor,
 		vk::PipelineStageFlagBits::eRayTracingShaderKHR,
-		vk::PipelineStageFlagBits::eFragmentShader
-	);
+		vk::PipelineStageFlagBits::eFragmentShader);
 
 	//Now display the results on screen!
 	frameCmds.bindPipeline(vk::PipelineBindPoint::eGraphics, displayPipeline);
@@ -202,8 +201,7 @@ void TestGLTFRayTrace::RenderFrame() {
 		vk::ImageLayout::eGeneral,
 		vk::ImageAspectFlagBits::eColor,
 		vk::PipelineStageFlagBits::eFragmentShader,
-		vk::PipelineStageFlagBits::eRayTracingShaderKHR
-	);
+		vk::PipelineStageFlagBits::eRayTracingShaderKHR);
 }
 
 void TestGLTFRayTrace::Update(float dt) {

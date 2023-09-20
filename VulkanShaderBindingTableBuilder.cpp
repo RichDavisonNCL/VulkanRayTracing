@@ -42,22 +42,18 @@ void VulkanShaderBindingTableBuilder::FillIndices(const vk::RayTracingPipelineCr
 			int shaderType = fromInfo->pGroups[i].generalShader;
 
 			if (fromInfo->pStages[shaderType].stage == vk::ShaderStageFlagBits::eRaygenKHR) {
-				//handleIndices[(int)BindingTableOrder::RayGen].push_back(i + offset);
-				handleIndices[(int)BindingTableOrder::RayGen].push_back(fromInfo->pGroups[i].generalShader + offset);
+				handleIndices[BindingTableOrder::RayGen].push_back(fromInfo->pGroups[i].generalShader + offset);
 
 			}
 			else if (fromInfo->pStages[shaderType].stage == vk::ShaderStageFlagBits::eMissKHR) {
-				//handleIndices[(int)BindingTableOrder::Miss].push_back(i + offset);
-				handleIndices[(int)BindingTableOrder::Miss].push_back(fromInfo->pGroups[i].generalShader + offset);
+				handleIndices[BindingTableOrder::Miss].push_back(fromInfo->pGroups[i].generalShader + offset);
 			}
 			else if(fromInfo->pStages[shaderType].stage == vk::ShaderStageFlagBits::eCallableKHR) {
-				//handleIndices[(int)BindingTableOrder::Call].push_back(i + offset);
-				handleIndices[(int)BindingTableOrder::Call].push_back(fromInfo->pGroups[i].generalShader + offset);
+				handleIndices[BindingTableOrder::Call].push_back(fromInfo->pGroups[i].generalShader + offset);
 			}
 		}
 		else { //Must be a hit group
-			//handleIndices[(int)BindingTableOrder::Hit].push_back(i + offset);
-			handleIndices[(int)BindingTableOrder::Hit].push_back(fromInfo->pGroups[i].closestHitShader + offset);
+			handleIndices[BindingTableOrder::Hit].push_back(fromInfo->pGroups[i].closestHitShader + offset);
 		}
 	}
 	offset += fromInfo->groupCount;

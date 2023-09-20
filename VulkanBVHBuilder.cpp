@@ -98,8 +98,7 @@ void VulkanBVHBuilder::BuildBLAS(vk::Device device, VmaAllocator allocator, vk::
 
 		if (hasIndices) {		
 			triData.indexType = iFormat;
-			triData.indexData.deviceAddress = device.getBufferAddress(vk::BufferDeviceAddressInfo(iBuffer)) + iOffset;
-			
+			triData.indexData.deviceAddress = device.getBufferAddress(vk::BufferDeviceAddressInfo(iBuffer)) + iOffset;		
 		}
 
 		triData.maxVertex = i.first->GetVertexCount();
@@ -123,14 +122,12 @@ void VulkanBVHBuilder::BuildBLAS(vk::Device device, VmaAllocator allocator, vk::
 												.setFlags(vk::GeometryFlagBitsKHR::eOpaque)
 												.geometry.setTriangles(triData);
 
-			blasEntry.geometries[j].geometry.triangles.maxVertex = 1;// m->count;
+			blasEntry.geometries[j].geometry.triangles.maxVertex = m->count;
 
 			blasEntry.ranges[j].primitiveCount	= i.first->GetPrimitiveCount(j);
 			blasEntry.ranges[j].firstVertex		= m->base;
 			blasEntry.ranges[j].primitiveOffset = m->start *(iFormat == vk::IndexType::eUint32 ? 4 : 2);
-			//blasBuildInfo.back().geometries[i].geometry.triangles.
-			blasEntry.maxPrims[j] = i.first->GetPrimitiveCount(j); //??????
-				//= std::max(blasEntry.maxPrims, blasEntry.ranges[j].primitiveCount);
+			blasEntry.maxPrims[j] = i.first->GetPrimitiveCount(j); 
 		}
 	}
 
@@ -225,7 +222,6 @@ void VulkanBVHBuilder::BuildTLAS(vk::Device device, VmaAllocator allocator, vk::
 		tlasEntries[i].flags = (VkGeometryInstanceFlagBitsKHR)vk::GeometryInstanceFlagBitsKHR::eTriangleFacingCullDisable;
 		tlasEntries[i].mask = entries[i].mask;
 		tlasEntries[i].instanceShaderBindingTableRecordOffset = entries[i].hitID;
-		bool a = true;
 	}
 
 	size_t dataSize = instanceCount * sizeof(vk::AccelerationStructureInstanceKHR);
@@ -257,11 +253,11 @@ void VulkanBVHBuilder::BuildTLAS(vk::Device device, VmaAllocator allocator, vk::
 	tlasBuffer = BufferBuilder(device, allocator)
 		.WithDeviceAddresses()
 		.WithBufferUsage(vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR)
-		.Build(sizesInfo.accelerationStructureSize * 5, "TLAS Buffer");
+		.Build(sizesInfo.accelerationStructureSize, "TLAS Buffer");
 
 	vk::AccelerationStructureCreateInfoKHR tlasCreateInfo;
 	tlasCreateInfo.buffer = tlasBuffer.buffer;
-	tlasCreateInfo.size = sizesInfo.accelerationStructureSize * 5;
+	tlasCreateInfo.size = sizesInfo.accelerationStructureSize;
 	tlasCreateInfo.type = vk::AccelerationStructureTypeKHR::eTopLevel;
 	
 	tlas = device.createAccelerationStructureKHRUnique(tlasCreateInfo);
@@ -271,7 +267,7 @@ void VulkanBVHBuilder::BuildTLAS(vk::Device device, VmaAllocator allocator, vk::
 							vk::BufferUsageFlagBits::eStorageBuffer)
 		.WithHostVisibility()
 		.WithDeviceAddresses()
-		.Build(sizesInfo.buildScratchSize * 5, "Scratch Buffer");
+		.Build(sizesInfo.buildScratchSize, "Scratch Buffer");
 
 	vk::DeviceAddress scratchAddr = device.getBufferAddress(scratchBuffer.buffer);
 

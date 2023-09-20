@@ -52,7 +52,6 @@ void TestRayTrace::SetupTutorial() {
 	GetPhysicalDevice().getProperties2(&props);
 
 	triangle = GenerateTriangle();
-	//vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR)
 
 	raygenShader	= UniqueVulkanRTShader(new VulkanRTShader("RayTrace/raygen.rgen.spv", GetDevice())); 
 	hitShader		= UniqueVulkanRTShader(new VulkanRTShader("RayTrace/closesthit.rchit.spv", GetDevice())); 
@@ -72,8 +71,8 @@ void TestRayTrace::SetupTutorial() {
 
 	tlas = bvhBuilder
 		.WithObject(&*triangle, Matrix4::Translation({ 0,0,-100.0f }) * Matrix4::Scale({2,4,2}))
-		.WithCommandQueue(GetQueue(CommandBufferType::AsyncCompute))
-		.WithCommandPool(GetCommandPool(CommandBufferType::AsyncCompute)) 
+		.WithCommandQueue(GetQueue(CommandBuffer::AsyncCompute))
+		.WithCommandPool(GetCommandPool(CommandBuffer::AsyncCompute)) 
 		.WithDevice(GetDevice())
 		.WithAllocator(GetMemoryAllocator())
 		.Build(vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace, "Test TLAS");
@@ -159,10 +158,10 @@ void TestRayTrace::RenderFrame() {
 	frameCmds.bindDescriptorSets(vk::PipelineBindPoint::eRayTracingKHR, *rtPipeline.layout, 0, 4, sets, 0, nullptr);
 
 	frameCmds.traceRaysKHR(
-		&bindingTable.regions[(int)BindingTableOrder::RayGen],
-		&bindingTable.regions[(int)BindingTableOrder::Miss],
-		&bindingTable.regions[(int)BindingTableOrder::Hit],
-		&bindingTable.regions[(int)BindingTableOrder::Call],
+		&bindingTable.regions[BindingTableOrder::RayGen],
+		&bindingTable.regions[BindingTableOrder::Miss],
+		&bindingTable.regions[BindingTableOrder::Hit],
+		&bindingTable.regions[BindingTableOrder::Call],
 		windowSize.x, windowSize.y, 1
 	);
 
@@ -172,8 +171,7 @@ void TestRayTrace::RenderFrame() {
 		vk::ImageLayout::eShaderReadOnlyOptimal,
 		vk::ImageAspectFlagBits::eColor,
 		vk::PipelineStageFlagBits::eRayTracingShaderKHR,
-		vk::PipelineStageFlagBits::eFragmentShader
-	);
+		vk::PipelineStageFlagBits::eFragmentShader);
 
 	//Now display the results on screen!
 	frameCmds.bindPipeline(vk::PipelineBindPoint::eGraphics, displayPipeline);
@@ -189,8 +187,7 @@ void TestRayTrace::RenderFrame() {
 		vk::ImageLayout::eGeneral,
 		vk::ImageAspectFlagBits::eColor,
 		vk::PipelineStageFlagBits::eFragmentShader,
-		vk::PipelineStageFlagBits::eRayTracingShaderKHR
-	);
+		vk::PipelineStageFlagBits::eRayTracingShaderKHR);
 }
 
 void TestRayTrace::Update(float dt) {

@@ -15,12 +15,14 @@ namespace NCL::Maths {
 }
 
 namespace NCL::Rendering::Vulkan {
-	enum class BindingTableOrder {
-		RayGen,
-		Hit,
-		Miss,
-		Call,
-		SIZE
+	struct BindingTableOrder {
+		enum Type : uint32_t {
+			RayGen,
+			Hit,
+			Miss,
+			Call,
+			MAX_SIZE
+		};
 	};
 
 	struct ShaderBindingTable {
@@ -56,6 +58,6 @@ namespace NCL::Rendering::Vulkan {
 
 		std::string debugName;
 
-		vector<uint32_t> handleIndices[(int)BindingTableOrder::SIZE];
+		std::vector<uint32_t> handleIndices[BindingTableOrder::MAX_SIZE];
 	};
 }

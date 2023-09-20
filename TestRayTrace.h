@@ -32,7 +32,6 @@ namespace NCL::Rendering::Vulkan {
 		UniqueVulkanShader	displayShader;
 
 		VulkanPipeline		rtPipeline;
-		UniqueVulkanMesh	triMesh;
 
 		UniqueVulkanMesh	triangle;
 		UniqueVulkanMesh	quadMesh;
