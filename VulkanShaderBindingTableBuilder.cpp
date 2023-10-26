@@ -104,7 +104,7 @@ ShaderBindingTable VulkanShaderBindingTableBuilder::Build(vk::Device device, Vma
 
 	table.tableBuffer = BufferBuilder(device, allocator)
 		.WithBufferUsage(vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eShaderDeviceAddressKHR | vk::BufferUsageFlagBits::eShaderBindingTableKHR)
-		.WithDeviceAddresses()
+		.WithDeviceAddress()
 		.WithHostVisibility()
 		.Build(totalAllocSize, debugName + " SBT Buffer");
 

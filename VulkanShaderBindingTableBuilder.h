@@ -15,7 +15,7 @@ namespace NCL::Maths {
 }
 
 namespace NCL::Rendering::Vulkan {
-	struct BindingTableOrder {
+	namespace BindingTableOrder {
 		enum Type : uint32_t {
 			RayGen,
 			Hit,

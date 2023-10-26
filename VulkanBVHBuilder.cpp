@@ -251,7 +251,7 @@ void VulkanBVHBuilder::BuildTLAS(vk::Device device, VmaAllocator allocator, vk::
 	device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, &geomInfo, &instanceCount, &sizesInfo);
 
 	tlasBuffer = BufferBuilder(device, allocator)
-		.WithDeviceAddresses()
+		.WithDeviceAddress()
 		.WithBufferUsage(vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR)
 		.Build(sizesInfo.accelerationStructureSize, "TLAS Buffer");
 
@@ -266,7 +266,7 @@ void VulkanBVHBuilder::BuildTLAS(vk::Device device, VmaAllocator allocator, vk::
 		.WithBufferUsage(	vk::BufferUsageFlagBits::eShaderDeviceAddress | 
 							vk::BufferUsageFlagBits::eStorageBuffer)
 		.WithHostVisibility()
-		.WithDeviceAddresses()
+		.WithDeviceAddress()
 		.Build(sizesInfo.buildScratchSize, "Scratch Buffer");
 
 	vk::DeviceAddress scratchAddr = device.getBufferAddress(scratchBuffer.buffer);
