@@ -87,22 +87,15 @@ void TestRayTrace::SetupTutorial() {
 		.WithPersistentMapping()
 		.Build(sizeof(Matrix4) * 2, "InverseMatrices");
 
-	//rayTexture = VulkanTexture::CreateColourTexture(this, windowSize.x, windowSize.y, "RayTraceResult", 
-	//	vk::Format::eR32G32B32A32Sfloat, 
-	//	vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eStorage,
-	//	vk::ImageLayout::eGeneral
-	//);
-
 	rayTexture = TextureBuilder(GetDevice(), GetMemoryAllocator())
-		.WithPool(GetCommandPool(CommandBuffer::Graphics))
-		.WithQueue(GetQueue(CommandBuffer::Graphics))
+		.UsingPool(GetCommandPool(CommandBuffer::Graphics))
+		.UsingQueue(GetQueue(CommandBuffer::Graphics))
 		.WithDimension(windowSize.x, windowSize.y, 1)
 		.WithUsages(vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eStorage)
 		.WithPipeFlags(vk::PipelineStageFlagBits::eColorAttachmentOutput)
 		.WithLayout(vk::ImageLayout::eGeneral)
 		.WithFormat(vk::Format::eB8G8R8A8Unorm)
 		.Build("RaytraceResult");
-
 
 	WriteStorageImageDescriptor(*imageDescriptor, 0, 0, *rayTexture, *defaultSampler, vk::ImageLayout::eGeneral);
 

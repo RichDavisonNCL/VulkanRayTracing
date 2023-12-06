@@ -29,7 +29,7 @@ namespace NCL::Rendering::Vulkan {
 	protected:
 		void SetupDevice(vk::PhysicalDeviceFeatures2& deviceFeatures) override;
 
-		GLTFLoader loader;
+		GLTFScene scene;
 
 		VulkanPipeline		displayPipeline;
 		UniqueVulkanShader	displayShader;

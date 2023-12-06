@@ -46,12 +46,13 @@ void TestGLTFRayTrace::SetupDevice(vk::PhysicalDeviceFeatures2& deviceFeatures) 
 void TestGLTFRayTrace::SetupTutorial() {
 	VulkanTutorialRenderer::SetupTutorial();
 
-	loader.Load("Sponza/Sponza.gltf",
+	GLTFLoader::Load("Sponza/Sponza.gltf",
+		scene,
 		[](void) ->  Mesh* {return new VulkanMesh(); },
 		[&](std::string& input) ->  VulkanTexture* {return LoadTexture(input).release(); }
 	);
 
-	for (const auto& m : loader.outMeshes) {
+	for (const auto& m : scene.meshes) {
 		VulkanMesh* loadedMesh = (VulkanMesh*)m.get();
 		loadedMesh->UploadToGPU(this,	vk::BufferUsageFlagBits::eShaderDeviceAddress | 
 										vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR);
@@ -78,8 +79,7 @@ void TestGLTFRayTrace::SetupTutorial() {
 		.WithUniformBuffers(1)
 		.Build("Camera Inverse Matrix Layout");
 
-
-	for (const auto& m : loader.outMeshes) {
+	for (const auto& m : scene.meshes) {
 		VulkanMesh* vm = (VulkanMesh*)m.get();
 		bvhBuilder.WithObject(vm, Matrix4::Translation({ 0,0,0 }) * Matrix4::Scale({ 1,1,1 }));
 	}
@@ -102,8 +102,8 @@ void TestGLTFRayTrace::SetupTutorial() {
 		.Build(sizeof(Matrix4) * 2, "InverseMatrices");
 
 	rayTexture = TextureBuilder(GetDevice(), GetMemoryAllocator())
-		.WithPool(GetCommandPool(CommandBuffer::Graphics))
-		.WithQueue(GetQueue(CommandBuffer::Graphics))
+		.UsingPool(GetCommandPool(CommandBuffer::Graphics))
+		.UsingQueue(GetQueue(CommandBuffer::Graphics))
 		.WithDimension(windowSize.x, windowSize.y, 1)
 		.WithUsages(vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eStorage)
 		.WithPipeFlags(vk::PipelineStageFlagBits::eColorAttachmentOutput)
