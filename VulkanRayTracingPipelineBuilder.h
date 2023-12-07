@@ -9,9 +9,6 @@ License: MIT (see LICENSE file at the top of the source tree)
 #include "../VulkanRendering/VulkanRenderer.h"
 #include "../VulkanRendering/VulkanPipelineBuilderBase.h"
 #include "VulkanRTShader.h"
-namespace NCL::Maths {
-	class Matrix4;
-}
 
 namespace NCL::Rendering::Vulkan {
 

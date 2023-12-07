@@ -70,7 +70,7 @@ void TestRayTrace::SetupTutorial() {
 		.Build("Camera Inverse Matrix Layout");
 
 	tlas = bvhBuilder
-		.WithObject(&*triangle, Matrix4::Translation({ 0,0,-100.0f }) * Matrix4::Scale({2,4,2}))
+		.WithObject(&*triangle, Matrix::Translation(Vector3{ 0,0,-100.0f }) * Matrix::Scale(Vector3{2,4,2}))
 		.WithCommandQueue(GetQueue(CommandBuffer::AsyncCompute))
 		.WithCommandPool(GetCommandPool(CommandBuffer::AsyncCompute)) 
 		.WithDevice(GetDevice())
@@ -200,6 +200,6 @@ void TestRayTrace::Update(float dt) {
 
 	Matrix4* inverseMatrixData = (Matrix4*)inverseMatrices.Data();
 
-	inverseMatrixData[0] = camera.BuildViewMatrix().Inverse();
-	inverseMatrixData[1] = camera.BuildProjectionMatrix(hostWindow.GetScreenAspect()).Inverse();
+	inverseMatrixData[0] = Matrix::Inverse(camera.BuildViewMatrix());
+	inverseMatrixData[1] = Matrix::Inverse(camera.BuildProjectionMatrix(hostWindow.GetScreenAspect()));
 }

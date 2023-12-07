@@ -82,7 +82,7 @@ void TestRayTracedSkinning::SetupTutorial() {
 
 	for (const auto& m : scene.meshes) {
 		VulkanMesh* vm = (VulkanMesh*)m.get();
-		bvhBuilder.WithObject(vm, Matrix4::Translation({ 0,0,0 }) * Matrix4::Scale({ 1,1,1 }));
+		bvhBuilder.WithObject(vm, Matrix::Translation(Vector3{ 0,0,0 }) * Matrix::Scale(Vector3{ 1,1,1 }));
 	}
 
 	tlas = bvhBuilder
@@ -217,6 +217,6 @@ void TestRayTracedSkinning::Update(float dt) {
 
 	Matrix4* inverseMatrixData = (Matrix4*)inverseMatrices.Data();
 
-	inverseMatrixData[0] = camera.BuildViewMatrix().Inverse();
-	inverseMatrixData[1] = camera.BuildProjectionMatrix(hostWindow.GetScreenAspect()).Inverse();
+	inverseMatrixData[0] = Matrix::Inverse(camera.BuildViewMatrix());
+	inverseMatrixData[1] = Matrix::Inverse(camera.BuildProjectionMatrix(hostWindow.GetScreenAspect()));
 }

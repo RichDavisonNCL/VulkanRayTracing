@@ -52,17 +52,8 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE
     <string>
     <iosfwd>
 	
-	<Matrix2.h>
-    <Matrix3.h>
-    <Matrix4.h>
-
-    <Vector2.h>
-    <Vector3.h>
-    <Vector4.h>
-
-    <Vector2i.h>
-    <Vector3i.h>
-    <Vector4i.h>
+    <Vector.h>
+    <Matrix.h>
 	
 	<Quaternion.h>
 	
