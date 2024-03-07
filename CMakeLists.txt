@@ -79,6 +79,7 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE
 
 add_compile_definitions(VULKAN_HPP_DISPATCH_LOADER_DYNAMIC)
 add_compile_definitions(VK_NO_PROTOTYPES)
+add_compile_definitions(VULKAN_HPP_NO_STRUCT_CONSTRUCTORS)
 
 ################################################################################
 # Compile and link options
