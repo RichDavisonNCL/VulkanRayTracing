@@ -21,13 +21,8 @@ namespace NCL::Rendering::Vulkan {
 		TestGLTFRayTrace(Window& window);
 		~TestGLTFRayTrace();
 
-		//void SetupTutorial() override;
-
-		//void RenderFrame() override;
-		//void Update(float dt) override;
-
 	protected:
-		//void SetupDevice(vk::PhysicalDeviceFeatures2& deviceFeatures) override;
+		void RenderFrame(float dt) override;
 
 		GLTFScene scene;
 

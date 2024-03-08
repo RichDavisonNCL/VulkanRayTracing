@@ -44,6 +44,5 @@ namespace NCL::Rendering::Vulkan {
 		std::vector<vk::RayTracingShaderGroupCreateInfoKHR> shaderGroups;
 
 		vk::PipelineDynamicStateCreateInfo			dynamicCreate;
-		vk::DynamicState dynamicStateEnables[2];
 	};
 }
