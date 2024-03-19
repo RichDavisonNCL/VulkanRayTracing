@@ -55,6 +55,12 @@ TestGLTFRayTrace::TestGLTFRayTrace(Window& window) : VulkanTutorial(window) {
 		[&](std::string& input) ->  VulkanTexture* {return LoadTexture(input).release(); }
 	);
 
+	GLTFLoader::Load("CesiumMan/CesiumMan.gltf",
+		scene,
+		[](void) ->  Mesh* {return new VulkanMesh(); },
+		[&](std::string& input) ->  VulkanTexture* {return LoadTexture(input).release(); }
+	);
+
 	for (const auto& m : scene.meshes) {
 		VulkanMesh* loadedMesh = (VulkanMesh*)m.get();
 		loadedMesh->UploadToGPU(renderer,	vk::BufferUsageFlagBits::eShaderDeviceAddress | 
